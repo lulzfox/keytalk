@@ -2,16 +2,12 @@ const fs = require("fs");
 const readline = require("readline");
 const login = require("@xaviabot/fca-unofficial");
 
-// Read the app state from a JSON file.
 const appState = JSON.parse(fs.readFileSync("./appState.json"));
 
-// Create a variable to store the Facebook Messenger API instance.
 let api;
 
-// Map to store group chat names based on IDs.
 const groupChatNames = {};
 
-// ANSI escape codes for text formatting
 const colors = {
   reset: "\x1b[0m",
   bright: "\x1b[1m",
@@ -30,18 +26,15 @@ const colors = {
   fgWhite: "\x1b[37m",
 };
 
-// Define an async function to send messages.
 async function sendMessage(message, recipientID) {
   if (!api) {
     console.error("API not initialized. Please run the script again.");
     return;
   }
 
-  // Send the message to the specified recipient (group chat).
   api.sendMessage(message, recipientID);
 }
 
-// Define an async function to handle user input.
 async function handleUserInput() {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -53,7 +46,6 @@ async function handleUserInput() {
   rl.question("Choose a group chat to start (enter its ID): ", async (initialGroupChatID) => {
     currentGroupChatID = initialGroupChatID;
 
-    // Get the name of the initial group chat
     const initialGroupChatInfo = await api.getThreadInfo(currentGroupChatID);
     groupChatNames[currentGroupChatID] = initialGroupChatInfo.name || "[Unnamed Group]";
     console.log(`${colors.fgCyan}You are now chatting in:${colors.reset} ${colors.fgMagenta}${groupChatNames[currentGroupChatID]}${colors.reset}`);
@@ -66,19 +58,16 @@ async function handleUserInput() {
         let newGroupChatID = await askQuestionAsync(rl, "Choose another group chat to switch to (enter its ID): ");
         currentGroupChatID = newGroupChatID;
 
-        // Get the name of the new group chat
         const newGroupChatInfo = await api.getThreadInfo(currentGroupChatID);
         groupChatNames[currentGroupChatID] = newGroupChatInfo.name || "[Unnamed Group]";
         console.log(`${colors.fgCyan}You are now chatting in:${colors.reset} ${colors.fgMagenta}${groupChatNames[currentGroupChatID]}${colors.reset}`);
       } else {
-        // Send the user input as a message to the current group chat.
         sendMessage(input, currentGroupChatID);
       }
 
       rl.prompt();
     });
 
-    // Listen for incoming messages in the current group chat.
     api.listen(async (err, event) => {
       try {
         if (err) {
@@ -106,7 +95,6 @@ async function handleUserInput() {
   });
 }
 
-// Define an async function to ask a question with the readline interface.
 async function askQuestionAsync(rl, question) {
   return new Promise((resolve) => {
     rl.question(question, (answer) => {
@@ -115,7 +103,6 @@ async function askQuestionAsync(rl, question) {
   });
 }
 
-// Define an async function to get the sender's name.
 async function getSenderName(senderID) {
   try {
     const userInfo = await api.getUserInfo(senderID);
@@ -126,10 +113,8 @@ async function getSenderName(senderID) {
   }
 }
 
-// Define an async main function.
 async function main() {
   try {
-    // Login to Facebook Messenger and get the API instance.
     api = await login({ appState });
   } catch (err) {
     console.error(`${colors.fgRed}Error logging in:${colors.reset}`, err);
@@ -138,7 +123,6 @@ async function main() {
 
   console.log(`${colors.fgGreen}Bot is now logged in.${colors.reset}`);
 
-  // Fetch group chat names.
   try {
     const threadList = await api.getThreadList(20);
     threadList.forEach((thread) => {
@@ -150,14 +134,11 @@ async function main() {
     console.error(`${colors.fgRed}Error fetching thread list:${colors.reset}`, error);
   }
 
-  // Start handling user input.
   handleUserInput();
 }
 
-// Start the main function.
 main();
 
-// Handle unhandled rejections.
 process.on("unhandledRejection", (err) => {
   console.error(`${colors.fgRed}Unhandled Rejection:${colors.reset}`, err);
 });
